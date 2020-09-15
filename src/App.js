@@ -2,13 +2,13 @@ import React, { useState, useEffect } from "react";
 import { Button, FormControl, Input, InputLabel } from "@material-ui/core";
 import Message from "./Message";
 import "./App.css";
+import db from "./firebase";
+import firebase from "firebase";
+import FlipMove from "react-flip-move";
 
 function App() {
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState([
-    {username: 'Kioria', text: 'I am mucheso'},
-    {username:'Tony Stark', text:'I am iron man'}
-  ]);
+  const [messages, setMessages] = useState([]);
   const [username, setUsername] = useState("");
 
   //useState is how define variables in React
@@ -17,10 +17,24 @@ function App() {
     setUsername(prompt("Please enter your name"));
   }, []);
 
+  useEffect(() => {
+    db.collection("messages")
+      .orderBy("timestamp", "asc")
+      .onSnapshot((snapshot) => {
+        setMessages(snapshot.docs.map((doc) => doc.data()));
+      });
+  }, [input]);
+
   const sendMessage = (event) => {
     //Disables refresh when you put press the button to submit message as it is in a form
     event.preventDefault();
-    setMessages([...messages, {username: username, text: input}]);
+
+    db.collection("messages").add({
+      message: input,
+      username: username,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+
     setInput("");
   };
 
@@ -48,7 +62,7 @@ function App() {
 
       {/*Messages */}
       {messages.map((message) => (
-        <Message message={message} username ={username} />
+        <Message message={message} username={username} />
       ))}
     </div>
   );
